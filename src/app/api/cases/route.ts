@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
+import { analyzeCase } from "@/lib/llm";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -126,70 +127,109 @@ export async function POST(request: Request) {
 
   await Promise.all(inserts);
 
-  const mockSuggestions = [
-    {
-      case_id: caseId,
-      type: "diagnosis",
-      content: "Syndrome coronarien chronique",
-      confidence: 0.82,
-      sources: [{ title: "ESC Guidelines 2024 — Chronic Coronary Syndromes" }],
-      sort_order: 1,
-    },
-    {
-      case_id: caseId,
-      type: "diagnosis",
-      content: "Insuffisance cardiaque a fraction d'ejection preservee",
-      confidence: 0.68,
-      sources: [{ title: "AHA/ACC Heart Failure Guidelines 2023" }],
-      sort_order: 2,
-    },
-    {
-      case_id: caseId,
-      type: "diagnosis",
-      content: "Cardiomyopathie metabolique",
-      confidence: 0.45,
-      sources: [
-        { title: "Diabetes Care 2024 — Cardiovascular Complications" },
-      ],
-      sort_order: 3,
-    },
-    {
-      case_id: caseId,
-      type: "blind_spot",
-      content:
-        "Evaluer la fonction diastolique par echocardiographie en raison des symptomes cardiaques.",
-      confidence: null,
-      sources: [],
-      sort_order: 1,
-    },
-    {
-      case_id: caseId,
-      type: "blind_spot",
-      content:
-        "Rechercher une ischemie silencieuse chez ce patient avec facteurs de risque cardiovasculaire.",
-      confidence: null,
-      sources: [],
-      sort_order: 2,
-    },
-    {
-      case_id: caseId,
-      type: "recommended_test",
-      content: "Echocardiographie transthoracique",
-      confidence: null,
-      sources: [],
-      sort_order: 1,
-    },
-    {
-      case_id: caseId,
-      type: "recommended_test",
-      content: "Bilan lipidique complet et HbA1c",
-      confidence: null,
-      sources: [],
-      sort_order: 2,
-    },
-  ];
+  let suggestions: {
+    case_id: string;
+    type: string;
+    content: string;
+    confidence: number | null;
+    sources: { title: string }[];
+    sort_order: number;
+  }[] = [];
 
-  await supabase.from("suggestions").insert(mockSuggestions);
+  try {
+    const analysis = await analyzeCase({
+      chief_complaint,
+      age: parseInt(age),
+      sex,
+      region,
+      symptoms: validSymptoms.map((s: { name: string; severity: string; duration: string }) => ({
+        name: s.name,
+        severity: s.severity,
+        duration: s.duration,
+      })),
+      history: validHistory.map((h: { condition: string; year: string; notes: string }) => ({
+        condition: h.condition,
+        year: h.year,
+        notes: h.notes,
+      })),
+      tests: validTests.map((t: { testName: string; result: string; unit: string; referenceRange: string; date: string }) => ({
+        testName: t.testName,
+        result: t.result,
+        unit: t.unit,
+        referenceRange: t.referenceRange,
+        date: t.date,
+      })),
+      treatments: validTreatments.map((t: { name: string; dosage: string; duration: string; outcome: string }) => ({
+        name: t.name,
+        dosage: t.dosage,
+        duration: t.duration,
+        outcome: t.outcome,
+      })),
+    });
+
+    analysis.diagnoses.forEach((d, i) => {
+      suggestions.push({
+        case_id: caseId,
+        type: "diagnosis",
+        content: d.content,
+        confidence: d.confidence,
+        sources: d.sources,
+        sort_order: i + 1,
+      });
+    });
+
+    analysis.blind_spots.forEach((b, i) => {
+      suggestions.push({
+        case_id: caseId,
+        type: "blind_spot",
+        content: b.content,
+        confidence: null,
+        sources: b.sources,
+        sort_order: i + 1,
+      });
+    });
+
+    analysis.recommended_tests.forEach((t, i) => {
+      suggestions.push({
+        case_id: caseId,
+        type: "recommended_test",
+        content: t.content,
+        confidence: null,
+        sources: t.sources,
+        sort_order: i + 1,
+      });
+    });
+  } catch (llmError) {
+    console.error("LLM analysis failed, using fallback:", llmError);
+    suggestions = [
+      {
+        case_id: caseId,
+        type: "diagnosis",
+        content: "Analyse automatique temporairement indisponible. Veuillez reessayer ou proceder a votre propre evaluation clinique.",
+        confidence: null,
+        sources: [],
+        sort_order: 1,
+      },
+      {
+        case_id: caseId,
+        type: "blind_spot",
+        content: "L'analyse automatique n'a pas pu etre completee. Verifiez les antecedents et les examens complementaires.",
+        confidence: null,
+        sources: [],
+        sort_order: 1,
+      },
+      {
+        case_id: caseId,
+        type: "recommended_test",
+        content: "Bilan biologique standard recommande en l'absence d'analyse automatique.",
+        confidence: null,
+        sources: [],
+        sort_order: 1,
+      },
+    ];
+  }
+
+  await supabase.from("suggestions").insert(suggestions);
 
   return NextResponse.json({ id: caseId }, { status: 201 });
 }
