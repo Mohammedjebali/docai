@@ -8,11 +8,13 @@ import {
   FilePlus,
   Settings,
   LogOut,
+  Brain,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase-client";
 import { useRouter } from "next/navigation";
 
 const navItems = [
+  { href: "/assistant", label: "Assistant", icon: Brain },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/cases", label: "Mes Cas", icon: FolderOpen },
   { href: "/cases/new", label: "Nouveau Cas", icon: FilePlus },
