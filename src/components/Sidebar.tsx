@@ -9,15 +9,18 @@ import {
   Settings,
   LogOut,
   Brain,
+  Shield,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase-client";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "@/lib/useTranslation";
+import { useIsAdmin } from "@/lib/useAdmin";
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { t } = useTranslation();
+  const admin = useIsAdmin();
 
   const navItems = [
     { href: "/assistant", label: t("nav.assistant"), icon: Brain },
@@ -25,6 +28,9 @@ export default function Sidebar() {
     { href: "/cases", label: t("nav.myCases"), icon: FolderOpen },
     { href: "/cases/new", label: t("nav.newCase"), icon: FilePlus },
     { href: "/settings", label: t("nav.settings"), icon: Settings },
+    ...(admin
+      ? [{ href: "/admin", label: t("nav.admin"), icon: Shield }]
+      : []),
   ];
 
   async function handleLogout() {
