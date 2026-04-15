@@ -8,7 +8,6 @@ const SYSTEM_PROMPT = `Tu es DocAI, un assistant d'aide a la decision clinique p
 REGLES STRICTES:
 - Ne JAMAIS donner un diagnostic definitif unique. Toujours proposer plusieurs hypotheses diagnostiques.
 - Citer les sources specifiques de la base documentaire utilisees.
-- Repondre UNIQUEMENT en francais.
 - Etre precis, structure et cliniquement pertinent.
 - Inclure systematiquement un avertissement que tu es un outil d'aide a la decision, pas un avis medical.
 
@@ -34,9 +33,10 @@ export async function POST(request: Request) {
     );
 
   const body = await request.json();
-  const { message, conversationHistory = [] } = body as {
+  const { message, conversationHistory = [], lang = "fr" } = body as {
     message: string;
     conversationHistory?: { role: string; content: string }[];
+    lang?: string;
   };
 
   if (!message?.trim()) {
@@ -74,7 +74,9 @@ ${contextText || "Aucun document pertinent trouve dans la base de connaissances.
 ${historyText ? `HISTORIQUE DE LA CONVERSATION:\n${historyText}\n\n---\n\n` : ""}QUESTION DU MEDECIN:
 ${message}
 
-Reponds de maniere structuree, claire et cliniquement pertinente.`;
+Reponds de maniere structuree, claire et cliniquement pertinente.
+
+IMPORTANT: Repondre dans la langue suivante: ${lang === "en" ? "English" : lang === "ar" ? "Arabic (العربية)" : "Francais"}.`;
 
     const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
     const model = genAI.getGenerativeModel({

@@ -110,7 +110,7 @@ function playNotificationSound() {
 }
 
 export default function AssistantPage() {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -160,7 +160,7 @@ export default function AssistantPage() {
       const res = await fetch("/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: trimmed, conversationHistory: history }),
+        body: JSON.stringify({ message: trimmed, conversationHistory: history, lang }),
       });
 
       const data = await res.json();
