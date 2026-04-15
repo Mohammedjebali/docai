@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Brain, SendHorizontal, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { useTranslation } from "@/lib/useTranslation";
+import AtomSpinner from "@/components/AtomSpinner";
 
 interface Source {
   title: string;
@@ -20,22 +21,11 @@ function TypingIndicator() {
   return (
     <div className="flex items-start gap-3 max-w-2xl">
       <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-        <Brain size={16} strokeWidth={1.5} className="text-primary" />
+        <AtomSpinner size={24} />
       </div>
       <div className="bg-white border border-border rounded-xl px-4 py-3 shadow-sm">
-        <div className="flex items-center gap-1.5">
-          <span
-            className="w-2 h-2 rounded-full bg-text-muted animate-bounce"
-            style={{ animationDelay: "0ms" }}
-          />
-          <span
-            className="w-2 h-2 rounded-full bg-text-muted animate-bounce"
-            style={{ animationDelay: "150ms" }}
-          />
-          <span
-            className="w-2 h-2 rounded-full bg-text-muted animate-bounce"
-            style={{ animationDelay: "300ms" }}
-          />
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-text-muted">Analyse en cours...</span>
         </div>
       </div>
     </div>
@@ -216,7 +206,11 @@ export default function AssistantPage() {
       {/* Top bar */}
       <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-border flex-shrink-0">
         <div className="flex items-center gap-2.5">
-          <Brain size={20} strokeWidth={1.5} className="text-primary" />
+          {loading ? (
+            <AtomSpinner size={22} />
+          ) : (
+            <Brain size={20} strokeWidth={1.5} className="text-primary" />
+          )}
           <h1 className="text-base font-semibold text-text-dark">{t("assistant.title")}</h1>
         </div>
         <button
