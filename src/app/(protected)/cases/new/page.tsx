@@ -61,7 +61,7 @@ const selectClass =
 
 export default function NewCasePage() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, ta } = useTranslation();
   const [step, setStep] = useState(0);
 
   const STEPS = [
@@ -79,10 +79,9 @@ export default function NewCasePage() {
     { value: "Sans effet", label: t("caseNew.outcomeNoEffect") },
   ];
 
-  const SYMPTOM_SUGGESTIONS: string[] = (
-    t("caseNew.symptomSuggestions") as unknown as string[]
-  ).length
-    ? (t("caseNew.symptomSuggestions") as unknown as string[])
+  const suggestions = ta("caseNew.symptomSuggestions");
+  const SYMPTOM_SUGGESTIONS: string[] = suggestions.length
+    ? suggestions
     : ["Douleur", "Fievre", "Fatigue", "Nausees", "Cephalees", "Toux", "Dyspnee", "Vertiges"];
 
   // Step 1 - Patient
